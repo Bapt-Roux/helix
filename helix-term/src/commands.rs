@@ -573,19 +573,19 @@ fn move_impl(cx: &mut Context, move_fn: MoveFn, dir: Direction, behaviour: Movem
 use helix_core::movement::{move_horizontally, move_vertically};
 
 fn move_char_left(cx: &mut Context) {
-    move_impl(cx, move_horizontally, Direction::Backward, Movement::Move)
+    move_impl(cx, move_horizontally, Direction::Backward, Movement::CountExtend)
 }
 
 fn move_char_right(cx: &mut Context) {
-    move_impl(cx, move_horizontally, Direction::Forward, Movement::Move)
+    move_impl(cx, move_horizontally, Direction::Forward, Movement::CountExtend)
 }
 
 fn move_line_up(cx: &mut Context) {
-    move_impl(cx, move_vertically, Direction::Backward, Movement::Move)
+    move_impl(cx, move_vertically, Direction::Backward, Movement::CountExtend)
 }
 
 fn move_line_down(cx: &mut Context) {
-    move_impl(cx, move_vertically, Direction::Forward, Movement::Move)
+    move_impl(cx, move_vertically, Direction::Forward, Movement::CountExtend)
 }
 
 fn move_visual_line_up(cx: &mut Context) {
@@ -1772,7 +1772,7 @@ fn search_impl(
         let range = Range::new(start, end).with_direction(primary.direction());
 
         let selection = match movement {
-            Movement::Extend => selection.clone().push(range),
+            Movement::Extend | Movement::CountExtend => selection.clone().push(range),
             Movement::Move => selection.clone().replace(selection.primary_index(), range),
         };
 

@@ -28,6 +28,7 @@ pub enum Direction {
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum Movement {
     Extend,
+    CountExtend,
     Move,
 }
 
@@ -40,6 +41,13 @@ pub fn move_horizontally(
     _: &TextFormat,
     _: &mut TextAnnotations,
 ) -> Range {
+    // Resolved expand behaviour based on movement and count
+    let extend = match behaviour {
+        Movement::Extend => true,
+        Movement::CountExtend => count != 1,
+        Movement::Move => false,
+    };
+
     let pos = range.cursor(slice);
 
     // Compute the new position.
@@ -49,7 +57,7 @@ pub fn move_horizontally(
     };
 
     // Compute the final new range.
-    range.put_cursor(slice, new_pos, behaviour == Movement::Extend)
+    range.put_cursor(slice, new_pos, extend)
 }
 
 pub fn move_vertically_visual(
@@ -113,6 +121,13 @@ pub fn move_vertically(
     annotations: &mut TextAnnotations,
 ) -> Range {
     annotations.clear_line_annotations();
+    // Resolved expand behaviour based on movement and count
+    let extend = match behaviour {
+        Movement::Extend => true,
+        Movement::CountExtend => count != 1,
+        Movement::Move => false,
+    };
+
     let pos = range.cursor(slice);
     let line_idx = slice.char_to_line(pos);
     let line_start = slice.line_to_char(line_idx);
@@ -160,7 +175,7 @@ pub fn move_vertically(
         return range;
     }
 
-    let mut new_range = range.put_cursor(slice, new_pos, behaviour == Movement::Extend);
+    let mut new_range = range.put_cursor(slice, new_pos, extend);
     new_range.old_visual_position = Some((new_row, new_col));
     new_range
 }
@@ -227,9 +242,14 @@ fn word_move(slice: RopeSlice, range: Range, count: usize, target: WordMotionTar
     };
 
     // Do the main work.
-    (0..count).fold(start_range, |r, _| {
+    let first_range = slice
+        .chars_at(start_range.head)
+        .range_to_target(target, start_range);
+    let last_range = (1..count).fold(first_range, |r, _| {
         slice.chars_at(r.head).range_to_target(target, r)
-    })
+    });
+    // Select from first range to last range rather than just the last range.
+    Range::new(first_range.anchor, last_range.head)
 }
 
 pub fn move_prev_paragraph(
@@ -875,11 +895,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(0, 0), Range::new(17, 20)),
+                    (3, Range::new(0, 0), Range::new(0, 20)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(0, 0), Range::new(32, 41)),
+                    (999, Range::new(0, 0), Range::new(0, 41)),
                 ]),
             ("", // Edge case of moving forward in empty string
                 vec![
@@ -959,11 +979,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(0, 0), Range::new(17, 20)),
+                    (3, Range::new(0, 0), Range::new(0, 20)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(0, 0), Range::new(32, 41)),
+                    (999, Range::new(0, 0), Range::new(0, 41)),
                 ]),
             ("", // Edge case of moving forward in empty string
                 vec![
@@ -1044,11 +1064,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(18, 18), Range::new(9, 0)),
+                    (3, Range::new(18, 18), Range::new(19, 0)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(40, 40), Range::new(10, 0)),
+                    (999, Range::new(40, 40), Range::new(41, 0)),
                 ]),
             ("", // Edge case of moving backwards in empty string
                 vec![
@@ -1141,11 +1161,11 @@ mod test {
             ),
             (
                 "Multiple motions at once resolve correctly",
-                vec![(3, Range::new(19, 19), Range::new(9, 0))],
+                vec![(3, Range::new(19, 19), Range::new(20, 0))],
             ),
             (
                 "Excessive motions are performed partially",
-                vec![(999, Range::new(40, 40), Range::new(10, 0))],
+                vec![(999, Range::new(40, 40), Range::new(41, 0))],
             ),
             (
                 "", // Edge case of moving backwards in empty string
@@ -1225,11 +1245,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(0, 0), Range::new(16, 19)),
+                    (3, Range::new(0, 0), Range::new(0, 19)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(0, 0), Range::new(31, 41)),
+                    (999, Range::new(0, 0), Range::new(0, 41)),
                 ]),
             ("", // Edge case of moving forward in empty string
                 vec![
@@ -1307,11 +1327,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(24, 24), Range::new(16, 8)),
+                    (3, Range::new(24, 24), Range::new(24, 8)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(40, 40), Range::new(9, 0)),
+                    (999, Range::new(40, 40), Range::new(41, 0)),
                 ]),
             ("", // Edge case of moving backwards in empty string
                 vec![
@@ -1389,11 +1409,11 @@ mod test {
                 ]),
             ("Multiple motions at once resolve correctly",
                 vec![
-                    (3, Range::new(0, 0), Range::new(16, 19)),
+                    (3, Range::new(0, 0), Range::new(0, 19)),
                 ]),
             ("Excessive motions are performed partially",
                 vec![
-                    (999, Range::new(0, 0), Range::new(31, 41)),
+                    (999, Range::new(0, 0), Range::new(0, 41)),
                 ]),
             ("", // Edge case of moving forward in empty string
                 vec![
