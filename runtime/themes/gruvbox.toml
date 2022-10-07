@@ -20,7 +20,11 @@
 "function.macro" = "aqua1"
 "function.builtin" = "yellow1"
 "tag" = "red1"
-"comment" = { fg = "gray1", modifiers = ["italic"]  }
+# "comment" = { fg = "gray1", modifiers = ["italic"]  }
+"comment" = { fg = "gray1"}
+'comment.line' = { } # Line comments, like this.
+'comment.block' = { } # Block comments, like /* this */ in some languages.
+'comment.block.documentation' = { fg = "gray1", modifiers = ["bold"] } # Doc comments, e.g '///' in rust.
 "constant" = { fg = "purple1" }
 "constant.builtin" = { fg = "purple1", modifiers = ["bold"] }
 "string" = "green1"
@@ -52,9 +56,8 @@
 "ui.help" = { bg = "bg1", fg = "fg1" }
 "ui.text" = { fg = "fg1" }
 "ui.text.focus" = { fg = "fg1" }
-"ui.selection" = { bg = "bg2" }
-"ui.selection.primary" = { bg = "bg3" }
-"ui.cursor.primary" = { bg = "fg4", fg = "bg1" }
+"ui.selection" = { bg = "#540099"}
+"ui.cursor.primary" = { modifiers = ["reversed"] }
 "ui.cursor.match" = { bg = "bg3" }
 "ui.menu" = { fg = "fg1", bg = "bg2" }
 "ui.menu.selected" = { fg = "bg2", bg = "blue1", modifiers = ["bold"] }
